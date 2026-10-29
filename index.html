@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GESIT x WELLNESS 2026</title>
+<meta name="description" content="Dashboard GESIT x WELLNESS PLN Mobile 2026 - total jarak dan kalori per orang per periode dua bulanan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f6f7;
+  --surface: #ffffff;
+  --surface-2: #f7f9fa;
+  --line: #e3e8eb;
+  --text: #10232b;
+  --text-2: #4a5d66;
+  --muted: #7a8b93;
+  --brand: #125d72;
+  --brand-2: #0b4a5c;
+  --accent: #00a2e9;
+  --sun: #ffcb05;
+  --lari: #2a78d6;
+  --jalan: #eb6834;
+  --sepeda: #1baf7a;
+  --kalori: #6250d6;
+  --bar-track: #eef2f4;
+  --gold: #f5c518; --silver: #b8c2c8; --bronze: #d08a52;
+  --warn-bg: #fff6db; --warn-ink: #7a5600; --warn-line: #f1d27a;
+  --info-bg: #e8f5fc; --info-ink: #0b4a5c; --info-line: #b9e0f4;
+  --shadow: 0 1px 2px rgba(16,35,43,.05), 0 4px 16px rgba(16,35,43,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1619; --surface: #152126; --surface-2: #1a282e; --line: #24363d;
+    --text: #e8eff2; --text-2: #b4c3c9; --muted: #84979f;
+    --brand: #3fa3bd; --brand-2: #0b3a47; --accent: #33b8f0;
+    --lari: #3987e5; --jalan: #d95926; --sepeda: #199e70; --kalori: #9085e9;
+    --bar-track: #1f3038;
+    --warn-bg: #2b2410; --warn-ink: #f3d27c; --warn-line: #5a4a1c;
+    --info-bg: #10303b; --info-ink: #bfe6f6; --info-line: #1e4c5c;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1619; --surface: #152126; --surface-2: #1a282e; --line: #24363d;
+  --text: #e8eff2; --text-2: #b4c3c9; --muted: #84979f;
+  --brand: #3fa3bd; --brand-2: #0b3a47; --accent: #33b8f0;
+  --lari: #3987e5; --jalan: #d95926; --sepeda: #199e70; --kalori: #9085e9;
+  --bar-track: #1f3038;
+  --warn-bg: #2b2410; --warn-ink: #f3d27c; --warn-line: #5a4a1c;
+  --info-bg: #10303b; --info-ink: #bfe6f6; --info-line: #1e4c5c;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.5 "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.top {
+  background: linear-gradient(135deg, #0b4a5c 0%, #125d72 55%, #137a93 100%);
+  color: #fff; position: relative; overflow: hidden;
+}
+.top::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+  background: linear-gradient(90deg, var(--sun) 0 22%, #00a2e9 22% 100%); }
+.top-inner { max-width: 1240px; margin: 0 auto; padding: 22px 16px 26px; display: flex; gap: 16px;
+  align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; font-weight: 600; }
+h1 { margin: 2px 0 2px; font-size: clamp(22px, 3.2vw, 32px); line-height: 1.15; font-weight: 800; letter-spacing: -.01em; }
+.sub { opacity: .85; font-size: 14px; }
+.meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 6px 10px;
+  border-radius: 999px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); white-space: nowrap; }
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+.pill.snap .dot { background: var(--sun); }
+.btn { font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 999px; padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff; }
+.btn:hover { background: rgba(255,255,255,.12); }
+.btn:disabled { opacity: .6; cursor: progress; }
+
+main { max-width: 1240px; margin: 0 auto; padding: 18px 16px 40px; }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 5; padding: 10px 0; background: var(--bg); }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; background: var(--surface); border: 1px solid var(--line);
+  padding: 4px; border-radius: 12px; box-shadow: var(--shadow); }
+.seg button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: transparent; color: var(--text-2);
+  padding: 7px 14px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+.seg button:hover { color: var(--text); background: var(--surface-2); }
+.seg button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+.seg button .now { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--sun);
+  margin-left: 6px; vertical-align: middle; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filters select, .filters input { font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.filters input { width: 210px; }
+
+.banner { border-radius: 12px; padding: 10px 14px; font-size: 13.5px; margin: 4px 0 14px; border: 1px solid; }
+.banner.warn { background: var(--warn-bg); color: var(--warn-ink); border-color: var(--warn-line); }
+.banner.info { background: var(--info-bg); color: var(--info-ink); border-color: var(--info-line); }
+.banner[hidden] { display: none; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
+.kpi .label { font-size: 12.5px; color: var(--text-2); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.kpi .label i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.kpi .value { font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; letter-spacing: -.02em; margin-top: 2px; }
+.kpi .value small { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.kpi .foot { font-size: 12.5px; color: var(--muted); }
+
+/* cards */
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+.grid2.grid-check { grid-template-columns: minmax(0, .8fr) minmax(0, 1.7fr); align-items: start; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); min-width: 0; }
+.card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 14px 16px 8px; flex-wrap: wrap; }
+.card-h h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.card-h .hint { font-size: 12.5px; color: var(--muted); }
+.card-b { padding: 0 16px 14px; }
+.scroll { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 8px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text); }
+th .arr { font-size: 10px; margin-left: 3px; opacity: .8; }
+td.r, th.r { text-align: right; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: 0; }
+.rank { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12.5px;
+  font-weight: 700; background: var(--surface-2); color: var(--text-2); border: 1px solid var(--line); }
+.rank.r1 { background: var(--gold); color: #3d2f00; border-color: transparent; }
+.rank.r2 { background: var(--silver); color: #26313a; border-color: transparent; }
+.rank.r3 { background: var(--bronze); color: #3a1d06; border-color: transparent; }
+.who b { font-weight: 600; display: block; line-height: 1.25; }
+.who span { font-size: 12px; color: var(--muted); }
+.zero { color: var(--muted); }
+.barcell { min-width: 120px; }
+.bar { display: flex; align-items: center; gap: 8px; }
+.bar .track { flex: 1; height: 8px; border-radius: 999px; background: var(--bar-track); overflow: hidden; display: flex; gap: 2px; }
+.bar .seg-fill { height: 100%; border-radius: 999px; }
+.bar .val { font-weight: 700; min-width: 64px; text-align: right; }
+.empty { padding: 18px 4px; color: var(--muted); font-size: 14px; }
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.chart-box { position: relative; height: 240px; }
+
+details.card > summary { list-style: none; cursor: pointer; }
+details.card > summary::-webkit-details-marker { display: none; }
+details.card > summary .chev { transition: transform .2s; display: inline-block; margin-left: 6px; }
+details.card[open] > summary .chev { transform: rotate(90deg); }
+.tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.p { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-line); }
+.tag.x { background: var(--info-bg); color: var(--info-ink); border: 1px solid var(--info-line); }
+.tag.o { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--line); }
+td.note { color: var(--text-2); font-size: 13px; min-width: 220px; }
+
+footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 28px; color: var(--muted); font-size: 12.5px; }
+
+.skeleton { color: var(--muted); padding: 40px 0; text-align: center; }
+
+@media (max-width: 980px) {
+  .grid2, .grid2.grid-check { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .filters, .filters input, .filters select { width: 100%; }
+  .controls { position: static; }
+  .seg { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .seg button { padding: 7px 2px; font-size: 12.5px; }
+  .seg button .now { margin-left: 3px; }
+  th, td { padding: 7px 5px; }
+  .hide-sm { display: none; }
+  .barcell { min-width: 90px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <div class="eyebrow">PLN UP3 Tahuna</div>
+      <h1>GESIT x WELLNESS PLN Mobile 2026</h1>
+      <div class="sub">Total jarak dan kalori per orang, dikelompokkan per dua bulan menurut tanggal aktivitas di bukti olahraga.</div>
+    </div>
+    <div class="meta">
+      <span class="pill" id="srcPill"><span class="dot"></span><span id="srcText">Memuat data...</span></span>
+      <button class="btn" id="reloadBtn" type="button">Muat ulang</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="controls">
+    <div class="seg" id="periodTabs" role="group" aria-label="Pilih periode"></div>
+    <div class="filters">
+      <select id="unitSel" aria-label="Filter unit"><option value="">Semua unit</option></select>
+      <input id="q" type="search" placeholder="Cari nama..." aria-label="Cari nama">
+    </div>
+  </div>
+
+  <div class="banner warn" id="banner" hidden></div>
+
+  <div id="app"><div class="skeleton">Memuat data...</div></div>
+</main>
+
+<footer>
+  Periode: Mei–Jun, Jul–Agu, Sep–Okt, Nov–Des. Tanggal tiap entri diambil dari tanggal aktivitas yang tertulis di bukti olahraga; entri yang tanggalnya belum dicek memakai tanggal submit.
+  Kilometer (lari, jalan kaki, sepeda) dan kalori (All Sport) dijumlah terpisah.
+</footer>
+
+<script>
+/* ===================== Pengaturan ===================== */
+// URL Web App dari Apps Script (Deploy > Manage deployments > Web app URL, yang berakhiran /exec).
+const API_URL = 'https://script.google.com/macros/s/AKfycbw_H7WLCGZjLpqgLeOU8dEgqy_sqEYaq8VlVdRR0oS_kitaQLYtS-5HKIK0ARS7ID5x/exec';
+const YEAR = 2026;
+const PERIODS = [
+  { id: 'p1', label: 'Mei–Jun', months: [5, 6] },
+  { id: 'p2', label: 'Jul–Agu', months: [7, 8] },
+  { id: 'p3', label: 'Sep–Okt', months: [9, 10] },
+  { id: 'p4', label: 'Nov–Des', months: [11, 12] },
+];
+const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const KM_CATS = [
+  { id: 'Lari', label: 'Lari', color: 'var(--lari)' },
+  { id: 'Jalan', label: 'Jalan kaki', color: 'var(--jalan)' },
+  { id: 'Sepeda', label: 'Sepeda', color: 'var(--sepeda)' },
+];
+// Data cadangan (opsional): salinan JSON dari API, dipakai kalau API tidak bisa diakses.
+const SNAPSHOT = null;
+/* ====================================================== */
+
+const fmtKm = new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtInt = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = id => document.getElementById(id);
+
+const state = { data: null, period: null, unit: '', q: '', sortKm: { key: 'total', dir: -1 }, sortKcal: { key: 'kcal', dir: -1 } };
+let charts = {};
+
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+/* ---------- data loading ---------- */
+function normalize(raw, source) {
+  const f = raw.fields || ['row','date','submit','name','unit','cat','value','status','note','counted'];
+  const ix = Object.fromEntries(f.map((k, i) => [k, i]));
+  const entries = raw.entries.map(e => ({
+    row: e[ix.row], date: e[ix.date], submit: e[ix.submit], name: e[ix.name], unit: e[ix.unit],
+    cat: e[ix.cat], value: +e[ix.value] || 0, status: e[ix.status], note: e[ix.note] || '', counted: e[ix.counted] !== 0,
+    month: +String(e[ix.date]).slice(5, 7), year: +String(e[ix.date]).slice(0, 4),
+  }));
+  // unit utama tiap orang = unit yang paling sering dipakai
+  const votes = {};
+  entries.forEach(e => { (votes[e.name] ||= {})[e.unit] = (votes[e.name][e.unit] || 0) + 1; });
+  const mainUnit = {};
+  for (const n in votes) mainUnit[n] = Object.entries(votes[n]).sort((a, b) => b[1] - a[1])[0][0];
+  entries.forEach(e => e.mainUnit = mainUnit[e.name]);
+  return { entries, updated: raw.updated, source };
+}
+
+function fetchJson(url, ms) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { signal: ctl.signal, redirect: 'follow' }).then(r => { clearTimeout(t); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+}
+function fetchJsonp(url, ms) {
+  return new Promise((resolve, reject) => {
+    const cb = '__gesit_cb_' + Date.now();
+    const s = document.createElement('script');
+    const t = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, ms);
+    function cleanup() { clearTimeout(t); delete window[cb]; s.remove(); }
+    window[cb] = d => { cleanup(); resolve(d); };
+    s.onerror = () => { cleanup(); reject(new Error('jsonp error')); };
+    s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+
+async function load(fresh) {
+  const btn = $('reloadBtn'); btn.disabled = true;
+  let data = null, problem = '';
+  if (API_URL) {
+    const url = API_URL + (fresh ? (API_URL.includes('?') ? '&' : '?') + 'fresh=1' : '');
+    try { data = await fetchJson(url, 20000); }
+    catch (e1) {
+      try { data = await fetchJsonp(url, 20000); } catch (e2) { problem = e1.message; }
+    }
+    if (data && data.error) { problem = data.error; data = null; }
+  }
+  if (data) {
+    state.data = normalize(data, 'live');
+    setBanner('');
+  } else if (SNAPSHOT) {
+    state.data = normalize(SNAPSHOT, 'snapshot');
+    setBanner(API_URL
+      ? 'Data langsung dari Google Sheet tidak bisa dimuat (' + esc(problem || 'tanpa respons') + '). Menampilkan salinan data per ' + esc(fmtDateTime(SNAPSHOT.updated)) + '.'
+      : 'API_URL belum diisi, jadi dashboard menampilkan salinan data per ' + esc(fmtDateTime(SNAPSHOT.updated)) + '. Isi API_URL di index.html agar data selalu terbaru.', API_URL ? 'warn' : 'info');
+  } else {
+    $('app').innerHTML = '<div class="skeleton">Data tidak bisa dimuat. ' + esc(problem) + '</div>';
+    btn.disabled = false; return;
+  }
+  const live = state.data.source === 'live';
+  $('srcPill').classList.toggle('snap', !live);
+  $('srcText').textContent = (live ? 'Data langsung · ' : 'Salinan data · ') + fmtDateTime(state.data.updated);
+  btn.disabled = false;
+  if (!state.period) state.period = defaultPeriod();
+  buildControls();
+  render();
+}
+
+function setBanner(html, kind) {
+  const b = $('banner');
+  if (!html) { b.hidden = true; return; }
+  b.className = 'banner ' + (kind || 'warn'); b.innerHTML = html; b.hidden = false;
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Makassar' }) + ' WITA';
+}
+function fmtDate(s) {
+  const [y, m, d] = String(s).split('-').map(Number);
+  return d + ' ' + MONTHS[m - 1] + ' ' + y;
+}
+
+function todayPeriod() {
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Makassar' }));
+  if (now.getFullYear() !== YEAR) return null;
+  const p = PERIODS.find(p => p.months.includes(now.getMonth() + 1));
+  return p ? p.id : null;
+}
+function defaultPeriod() {
+  const t = todayPeriod();
+  if (t) return t;
+  const withData = PERIODS.filter(p => state.data.entries.some(e => inPeriod(e, p.id)));
+  return withData.length ? withData[withData.length - 1].id : 'all';
+}
+function inPeriod(e, pid) {
+  if (pid === 'all') return true;
+  const p = PERIODS.find(x => x.id === pid);
+  return e.year === YEAR && p.months.includes(e.month);
+}
+
+/* ---------- controls ---------- */
+function buildControls() {
+  const now = todayPeriod();
+  const tabs = PERIODS.map(p => ({ id: p.id, label: p.label })).concat([{ id: 'all', label: 'Semua' }]);
+  $('periodTabs').innerHTML = tabs.map(t =>
+    `<button type="button" data-p="${t.id}" aria-pressed="${t.id === state.period}">${esc(t.label)}${t.id === now ? '<span class="now" title="Periode berjalan"></span>' : ''}</button>`).join('');
+  $('periodTabs').querySelectorAll('button').forEach(b => b.onclick = () => { state.period = b.dataset.p; buildControls(); render(); });
+
+  const units = [...new Set(state.data.entries.map(e => e.mainUnit))].sort((a, b) => a.localeCompare(b, 'id'));
+  const sel = $('unitSel');
+  sel.innerHTML = '<option value="">Semua unit</option>' + units.map(u => `<option ${u === state.unit ? 'selected' : ''}>${esc(u)}</option>`).join('');
+  sel.onchange = () => { state.unit = sel.value; render(); };
+  $('q').oninput = e => { state.q = e.target.value.trim().toLowerCase(); render(); };
+}
+
+/* ---------- aggregation ---------- */
+function filtered(pid) {
+  return state.data.entries.filter(e => e.counted && inPeriod(e, pid)
+    && (!state.unit || e.mainUnit === state.unit)
+    && (!state.q || e.name.toLowerCase().includes(state.q)));
+}
+function perPerson(list) {
+  const m = new Map();
+  for (const e of list) {
+    const p = m.get(e.name) || { name: e.name, unit: e.mainUnit, Lari: 0, Jalan: 0, Sepeda: 0, total: 0, kcal: 0, nKm: 0, nKcal: 0 };
+    if (e.cat === 'Kalori') { p.kcal += e.value; p.nKcal++; }
+    else { p[e.cat] += e.value; p.total += e.value; p.nKm++; }
+    m.set(e.name, p);
+  }
+  return [...m.values()];
+}
+
+/* ---------- render ---------- */
+function render() {
+  const list = filtered(state.period);
+  const people = perPerson(list);
+  const totKm = people.reduce((s, p) => s + p.total, 0);
+  const totKcal = people.reduce((s, p) => s + p.kcal, 0);
+  const byCat = Object.fromEntries(KM_CATS.map(c => [c.id, people.reduce((s, p) => s + p[c.id], 0)]));
+  const pLabel = state.period === 'all' ? 'semua periode' : PERIODS.find(p => p.id === state.period).label + ' ' + YEAR;
+  const check = state.data.entries.filter(e => inPeriod(e, state.period)
+    && (!state.unit || e.mainUnit === state.unit) && (!state.q || e.name.toLowerCase().includes(state.q))
+    && (e.status !== 'b' || !e.counted || /dobel/i.test(e.note)));
+
+  $('app').innerHTML = `
+  <section class="kpis">
+    <div class="kpi"><div class="label"><i style="background:var(--lari)"></i>Total jarak</div>
+      <div class="value num">${fmtKm.format(totKm)}<small>km</small></div>
+      <div class="foot num">Lari ${fmtKm.format(byCat.Lari)} · Jalan ${fmtKm.format(byCat.Jalan)} · Sepeda ${fmtKm.format(byCat.Sepeda)}</div></div>
+    <div class="kpi"><div class="label"><i style="background:var(--kalori)"></i>Total kalori</div>
+      <div class="value num">${fmtInt.format(totKcal)}<small>kcal</small></div>
+      <div class="foot">Kategori All Sport</div></div>
+    <div class="kpi"><div class="label">Peserta aktif</div>
+      <div class="value num">${people.length}</div>
+      <div class="foot">${esc(pLabel)}</div></div>
+    <div class="kpi"><div class="label">Entri dihitung</div>
+      <div class="value num">${list.length}</div>
+      <div class="foot">${check.length ? check.length + ' perlu dicek' : 'Semua tanggal dari bukti'}</div></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <div class="card-h"><h2>Peringkat jarak</h2>
+        <div class="legend">${KM_CATS.map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join('')}</div></div>
+      <div class="card-b scroll" id="kmBoard"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>Peringkat kalori</h2><span class="hint">All Sport, kcal</span></div>
+      <div class="card-b scroll" id="kcalBoard"></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <div class="card-h"><h2>Jarak per bulan</h2>
+        <div class="legend">${KM_CATS.map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join('')}</div></div>
+      <div class="card-b"><div class="chart-box"><canvas id="kmChart" aria-label="Grafik jarak per bulan"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>Kalori per bulan</h2><span class="hint">kcal</span></div>
+      <div class="card-b"><div class="chart-box"><canvas id="kcalChart" aria-label="Grafik kalori per bulan"></canvas></div></div>
+    </div>
+  </section>
+
+  <section class="grid2 grid-check">
+    <div class="card">
+      <div class="card-h"><h2>Per unit</h2><span class="hint">${esc(pLabel)}</span></div>
+      <div class="card-b scroll" id="unitTable"></div>
+    </div>
+    <details class="card" ${check.length && check.length <= 12 ? 'open' : ''}>
+      <summary class="card-h"><h2>Perlu dicek <span class="chev">›</span></h2><span class="hint">${check.length} entri</span></summary>
+      <div class="card-b scroll" id="checkTable"></div>
+    </details>
+  </section>`;
+
+  renderKmBoard(people);
+  renderKcalBoard(people);
+  renderUnits(people);
+  renderCheck(check);
+  renderCharts();
+}
+
+function sortRows(rows, s) {
+  return rows.sort((a, b) => {
+    const x = a[s.key], y = b[s.key];
+    if (typeof x === 'string') return s.dir * x.localeCompare(y, 'id');
+    return s.dir * (x - y) || a.name.localeCompare(b.name, 'id');
+  });
+}
+function th(label, key, s, cls, onSort) {
+  const active = s.key === key;
+  return `<th class="sortable ${cls || ''}" data-k="${key}" aria-sort="${active ? (s.dir < 0 ? 'descending' : 'ascending') : 'none'}">${label}${active ? `<span class="arr">${s.dir < 0 ? '▼' : '▲'}</span>` : ''}</th>`;
+}
+function wireSort(el, s, rerender) {
+  el.querySelectorAll('th.sortable').forEach(h => h.onclick = () => {
+    const k = h.dataset.k;
+    if (s.key === k) s.dir *= -1; else { s.key = k; s.dir = k === 'name' || k === 'unit' ? 1 : -1; }
+    rerender();
+  });
+}
+function rankChip(i) { return `<span class="rank ${i < 3 ? 'r' + (i + 1) : ''}">${i + 1}</span>`; }
+const cell = (v, f) => v ? `<td class="r num">${f(v)}</td>` : `<td class="r zero">–</td>`;
+
+function renderKmBoard(people) {
+  const el = $('kmBoard'), s = state.sortKm;
+  const rows = people.filter(p => p.total > 0);
+  if (!rows.length) { el.innerHTML = '<div class="empty">Belum ada entri jarak di periode ini.</div>'; return; }
+  const rankOrder = [...rows].sort((a, b) => b.total - a.total);
+  const rank = new Map(rankOrder.map((p, i) => [p.name, i]));
+  const max = rankOrder[0].total;
+  sortRows(rows, s);
+  el.innerHTML = `<table><thead><tr><th>#</th>${th('Nama', 'name', s)}${th('Lari', 'Lari', s, 'r hide-sm')}${th('Jalan', 'Jalan', s, 'r hide-sm')}${th('Sepeda', 'Sepeda', s, 'r hide-sm')}${th('Total km', 'total', s, 'r')}</tr></thead><tbody>${
+    rows.map(p => `<tr><td>${rankChip(rank.get(p.name))}</td>
+      <td class="who"><b>${esc(p.name)}</b><span>${esc(p.unit)} · ${p.nKm} entri</span></td>
+      ${['Lari', 'Jalan', 'Sepeda'].map(k => cell(p[k], fmtKm.format).replace('<td class="r', '<td class="hide-sm r')).join('')}
+      <td class="barcell"><div class="bar"><div class="track">${KM_CATS.filter(c => p[c.id] > 0).map(c =>
+        `<div class="seg-fill" style="width:${(p[c.id] / max * 100).toFixed(2)}%;background:${c.color}" title="${c.label}: ${fmtKm.format(p[c.id])} km"></div>`).join('')}</div>
+        <span class="val num">${fmtKm.format(p.total)}</span></div></td></tr>`).join('')}</tbody></table>`;
+  wireSort(el, s, () => renderKmBoard(people));
+}
+
+function renderKcalBoard(people) {
+  const el = $('kcalBoard'), s = state.sortKcal;
+  const rows = people.filter(p => p.kcal > 0);
+  if (!rows.length) { el.innerHTML = '<div class="empty">Belum ada entri kalori di periode ini.</div>'; return; }
+  const rankOrder = [...rows].sort((a, b) => b.kcal - a.kcal);
+  const rank = new Map(rankOrder.map((p, i) => [p.name, i]));
+  const max = rankOrder[0].kcal;
+  sortRows(rows, s);
+  el.innerHTML = `<table><thead><tr><th>#</th>${th('Nama', 'name', s)}${th('Kalori', 'kcal', s, 'r')}</tr></thead><tbody>${
+    rows.map(p => `<tr><td>${rankChip(rank.get(p.name))}</td>
+      <td class="who"><b>${esc(p.name)}</b><span>${esc(p.unit)} · ${p.nKcal} entri</span></td>
+      <td class="barcell"><div class="bar"><div class="track"><div class="seg-fill" style="width:${(p.kcal / max * 100).toFixed(2)}%;background:var(--kalori)"></div></div>
+        <span class="val num">${fmtInt.format(p.kcal)}</span></div></td></tr>`).join('')}</tbody></table>`;
+  wireSort(el, s, () => renderKcalBoard(people));
+}
+
+function renderUnits(people) {
+  const el = $('unitTable');
+  const m = new Map();
+  people.forEach(p => {
+    const u = m.get(p.unit) || { unit: p.unit, n: 0, km: 0, kcal: 0 };
+    u.n++; u.km += p.total; u.kcal += p.kcal; m.set(p.unit, u);
+  });
+  const rows = [...m.values()].sort((a, b) => b.km - a.km || b.kcal - a.kcal);
+  if (!rows.length) { el.innerHTML = '<div class="empty">Tidak ada data.</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Unit</th><th class="r">Peserta</th><th class="r">Total km</th><th class="r">Kalori</th></tr></thead><tbody>${
+    rows.map(u => `<tr><td style="white-space:nowrap">${esc(u.unit)}</td><td class="r num">${u.n}</td>${cell(u.km, fmtKm.format)}${cell(u.kcal, fmtInt.format)}</tr>`).join('')}</tbody></table>`;
+}
+
+function renderCheck(list) {
+  const el = $('checkTable');
+  if (!list.length) { el.innerHTML = '<div class="empty">Tidak ada entri yang perlu dicek di periode ini.</div>'; return; }
+  const tag = e => !e.counted ? '<span class="tag o">Tidak dihitung</span>'
+    : e.status === 'p' ? '<span class="tag p">Tanggal perkiraan</span>'
+    : e.status === 'x' ? '<span class="tag x">Belum dicek</span>' : '<span class="tag o">Catatan</span>';
+  el.innerHTML = `<table><thead><tr><th>Baris</th><th>Nama</th><th>Tanggal</th><th class="r">Nilai</th><th>Status</th><th>Catatan</th></tr></thead><tbody>${
+    list.sort((a, b) => a.row - b.row).map(e => `<tr><td class="num">${e.row}</td><td>${esc(e.name)}</td>
+      <td class="num" style="white-space:nowrap">${fmtDate(e.date)}</td>
+      <td class="r num" style="white-space:nowrap">${e.cat === 'Kalori' ? fmtInt.format(e.value) + ' kcal' : fmtKm.format(e.value) + ' km'}</td>
+      <td>${tag(e)}</td><td class="note">${esc(e.note || (e.status === 'x' ? 'Tanggal bukti belum diisi; sementara memakai tanggal submit ' + fmtDate(e.submit) : ''))}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function renderCharts() {
+  if (!window.Chart) return;
+  Object.values(charts).forEach(c => c.destroy());
+  const list = state.data.entries.filter(e => e.counted && e.year === YEAR
+    && (!state.unit || e.mainUnit === state.unit) && (!state.q || e.name.toLowerCase().includes(state.q)));
+  const months = [...new Set(PERIODS.flatMap(p => p.months))];
+  const labels = months.map(m => MONTHS[m - 1]);
+  const sel = state.period === 'all' ? months : PERIODS.find(p => p.id === state.period).months;
+  const dim = (color, m) => sel.includes(m) ? color : color + '55';
+  const surface = cssVar('--surface'), grid = cssVar('--line'), ink = cssVar('--text-2'), font = 'Plus Jakarta Sans, system-ui, sans-serif';
+  const sum = (cat, m) => list.filter(e => e.month === m && (cat === 'km' ? e.cat !== 'Kalori' : e.cat === cat)).reduce((s, e) => s + e.value, 0);
+  const common = {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { color: ink, font: { family: font } }, border: { color: grid } },
+      y: { stacked: true, beginAtZero: true, grid: { color: grid }, border: { display: false },
+           ticks: { color: ink, font: { family: font }, callback: v => fmtInt.format(v) } },
+    },
+    plugins: { legend: { display: false }, tooltip: { padding: 10, titleFont: { family: font, weight: '700' }, bodyFont: { family: font } } },
+  };
+  const km = KM_CATS.map(c => ({ c, color: cssVar('--' + c.id.toLowerCase()) }));
+  charts.km = new Chart($('kmChart'), {
+    type: 'bar',
+    data: { labels, datasets: km.map(({ c, color }) => ({
+      label: c.label, data: months.map(m => +sum(c.id, m).toFixed(2)),
+      backgroundColor: months.map(m => dim(color, m)), borderColor: surface, borderWidth: { top: 2 }, borderSkipped: 'bottom',
+      borderRadius: 3, maxBarThickness: 46 })) },
+    options: { ...common, plugins: { ...common.plugins, tooltip: { ...common.plugins.tooltip,
+      callbacks: { label: x => ` ${x.dataset.label}: ${fmtKm.format(x.raw)} km`,
+                   footer: items => 'Total: ' + fmtKm.format(items.reduce((s, i) => s + i.raw, 0)) + ' km' } } } },
+  });
+  const kc = cssVar('--kalori');
+  charts.kcal = new Chart($('kcalChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Kalori', data: months.map(m => sum('Kalori', m)),
+      backgroundColor: months.map(m => dim(kc, m)), borderRadius: 4, maxBarThickness: 46 }] },
+    options: { ...common, plugins: { ...common.plugins, tooltip: { ...common.plugins.tooltip,
+      callbacks: { label: x => ` ${fmtInt.format(x.raw)} kcal` } } } },
+  });
+}
+
+$('reloadBtn').onclick = () => load(true);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => state.data && renderCharts());
+load(false);
+</script>
+</body>
+</html>
