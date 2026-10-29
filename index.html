@@ -121,11 +121,12 @@ main { max-width: 1240px; margin: 0 auto; padding: 18px 16px 40px; }
 .kpi .foot { font-size: 12.5px; color: var(--muted); }
 
 /* cards */
-.grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
-.grid2.grid-check { grid-template-columns: minmax(0, .8fr) minmax(0, 1.7fr); align-items: start; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+.boards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; align-items: start; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); min-width: 0; }
 .card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 14px 16px 8px; flex-wrap: wrap; }
-.card-h h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.card-h h2 { margin: 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.card-h h2 .chip { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
 .card-h .hint { font-size: 12.5px; color: var(--muted); }
 .card-b { padding: 0 16px 14px; }
 .scroll { overflow-x: auto; }
@@ -159,22 +160,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .chart-box { position: relative; height: 240px; }
 
-details.card > summary { list-style: none; cursor: pointer; }
-details.card > summary::-webkit-details-marker { display: none; }
-details.card > summary .chev { transition: transform .2s; display: inline-block; margin-left: 6px; }
-details.card[open] > summary .chev { transform: rotate(90deg); }
-.tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-.tag.p { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-line); }
-.tag.x { background: var(--info-bg); color: var(--info-ink); border: 1px solid var(--info-line); }
-.tag.o { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--line); }
-td.note { color: var(--text-2); font-size: 13px; min-width: 220px; }
-
 footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 28px; color: var(--muted); font-size: 12.5px; }
 
 .skeleton { color: var(--muted); padding: 40px 0; text-align: center; }
 
 @media (max-width: 980px) {
-  .grid2, .grid2.grid-check { grid-template-columns: minmax(0, 1fr); }
+  .grid2, .boards { grid-template-columns: minmax(0, 1fr); }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
@@ -195,7 +186,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 28px; color: var(--m
     <div>
       <div class="eyebrow">PLN UP3 Tahuna</div>
       <h1>GESIT x WELLNESS PLN Mobile 2026</h1>
-      <div class="sub">Total jarak dan kalori per orang, dikelompokkan per dua bulan menurut tanggal aktivitas di bukti olahraga.</div>
+      <div class="sub">Total per orang untuk tiap kategori (lari, jalan kaki, sepeda, All Sport), per dua bulan menurut tanggal aktivitas di bukti olahraga.</div>
     </div>
     <div class="meta">
       <span class="pill" id="srcPill"><span class="dot"></span><span id="srcText">Memuat data...</span></span>
@@ -219,8 +210,8 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 28px; color: var(--m
 </main>
 
 <footer>
-  Periode: Mei–Jun, Jul–Agu, Sep–Okt, Nov–Des. Tanggal tiap entri diambil dari tanggal aktivitas yang tertulis di bukti olahraga; entri yang tanggalnya belum dicek memakai tanggal submit.
-  Kilometer (lari, jalan kaki, sepeda) dan kalori (All Sport) dijumlah terpisah.
+  Periode: Mei–Jun, Jul–Agu, Sep–Okt, Nov–Des. Tanggal tiap entri diambil dari tanggal aktivitas yang tertulis di bukti olahraga; entri yang tanggalnya belum diisi memakai tanggal submit.
+  Lari, jalan kaki, sepeda (km) dan All Sport (kcal) dijumlah dan diperingkat terpisah.
 </footer>
 
 <script>
@@ -246,10 +237,17 @@ const SNAPSHOT = null;
 
 const fmtKm = new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtInt = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
+// Tiap kategori dihitung dan diperingkat sendiri-sendiri.
+const CATS = [
+  { id: 'lari',   key: 'Lari',   count: 'nLari',   label: 'Lari',       unit: 'km',   color: 'var(--lari)',   fmt: v => fmtKm.format(v) },
+  { id: 'jalan',  key: 'Jalan',  count: 'nJalan',  label: 'Jalan Kaki', unit: 'km',   color: 'var(--jalan)',  fmt: v => fmtKm.format(v) },
+  { id: 'sepeda', key: 'Sepeda', count: 'nSepeda', label: 'Sepeda',     unit: 'km',   color: 'var(--sepeda)', fmt: v => fmtKm.format(v) },
+  { id: 'kalori', key: 'kcal',   count: 'nKcal',   label: 'All Sport',  unit: 'kcal', color: 'var(--kalori)', fmt: v => fmtInt.format(v) },
+];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const $ = id => document.getElementById(id);
 
-const state = { data: null, period: null, unit: '', q: '', sortKm: { key: 'total', dir: -1 }, sortKcal: { key: 'kcal', dir: -1 } };
+const state = { data: null, period: null, unit: '', q: '' };
 let charts = {};
 
 function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
@@ -381,9 +379,9 @@ function filtered(pid) {
 function perPerson(list) {
   const m = new Map();
   for (const e of list) {
-    const p = m.get(e.name) || { name: e.name, unit: e.mainUnit, Lari: 0, Jalan: 0, Sepeda: 0, total: 0, kcal: 0, nKm: 0, nKcal: 0 };
+    const p = m.get(e.name) || { name: e.name, unit: e.mainUnit, Lari: 0, Jalan: 0, Sepeda: 0, kcal: 0, nLari: 0, nJalan: 0, nSepeda: 0, nKcal: 0 };
     if (e.cat === 'Kalori') { p.kcal += e.value; p.nKcal++; }
-    else { p[e.cat] += e.value; p.total += e.value; p.nKm++; }
+    else if (e.cat in p) { p[e.cat] += e.value; p['n' + e.cat]++; }
     m.set(e.name, p);
   }
   return [...m.values()];
@@ -393,151 +391,77 @@ function perPerson(list) {
 function render() {
   const list = filtered(state.period);
   const people = perPerson(list);
-  const totKm = people.reduce((s, p) => s + p.total, 0);
-  const totKcal = people.reduce((s, p) => s + p.kcal, 0);
-  const byCat = Object.fromEntries(KM_CATS.map(c => [c.id, people.reduce((s, p) => s + p[c.id], 0)]));
   const pLabel = state.period === 'all' ? 'semua periode' : PERIODS.find(p => p.id === state.period).label + ' ' + YEAR;
-  const check = state.data.entries.filter(e => inPeriod(e, state.period)
-    && (!state.unit || e.mainUnit === state.unit) && (!state.q || e.name.toLowerCase().includes(state.q))
-    && (e.status !== 'b' || !e.counted || /dobel/i.test(e.note)));
+  const stat = c => {
+    const ps = people.filter(p => p[c.key] > 0);
+    return { total: ps.reduce((s, p) => s + p[c.key], 0), n: ps.length, entries: ps.reduce((s, p) => s + p[c.count], 0) };
+  };
 
   $('app').innerHTML = `
   <section class="kpis">
-    <div class="kpi"><div class="label"><i style="background:var(--lari)"></i>Total jarak</div>
-      <div class="value num">${fmtKm.format(totKm)}<small>km</small></div>
-      <div class="foot num">Lari ${fmtKm.format(byCat.Lari)} · Jalan ${fmtKm.format(byCat.Jalan)} · Sepeda ${fmtKm.format(byCat.Sepeda)}</div></div>
-    <div class="kpi"><div class="label"><i style="background:var(--kalori)"></i>Total kalori</div>
-      <div class="value num">${fmtInt.format(totKcal)}<small>kcal</small></div>
-      <div class="foot">Kategori All Sport</div></div>
-    <div class="kpi"><div class="label">Peserta aktif</div>
-      <div class="value num">${people.length}</div>
-      <div class="foot">${esc(pLabel)}</div></div>
-    <div class="kpi"><div class="label">Entri dihitung</div>
-      <div class="value num">${list.length}</div>
-      <div class="foot">${check.length ? check.length + ' perlu dicek' : 'Semua tanggal dari bukti'}</div></div>
+    ${CATS.map(c => { const s = stat(c); return `
+    <div class="kpi"><div class="label"><i style="background:${c.color}"></i>${c.label}</div>
+      <div class="value num">${c.fmt(s.total)}<small>${c.unit}</small></div>
+      <div class="foot num">${s.n} peserta · ${s.entries} entri</div></div>`; }).join('')}
   </section>
 
-  <section class="grid2">
+  <section class="boards">
+    ${CATS.map(c => `
     <div class="card">
-      <div class="card-h"><h2>Peringkat jarak</h2>
-        <div class="legend">${KM_CATS.map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join('')}</div></div>
-      <div class="card-b scroll" id="kmBoard"></div>
-    </div>
-    <div class="card">
-      <div class="card-h"><h2>Peringkat kalori</h2><span class="hint">All Sport, kcal</span></div>
-      <div class="card-b scroll" id="kcalBoard"></div>
-    </div>
+      <div class="card-h"><h2><i class="chip" style="background:${c.color}"></i>Peringkat ${c.label}</h2><span class="hint">${c.unit} · ${esc(pLabel)}</span></div>
+      <div class="card-b scroll" id="board-${c.id}"></div>
+    </div>`).join('')}
   </section>
 
   <section class="grid2">
     <div class="card">
       <div class="card-h"><h2>Jarak per bulan</h2>
         <div class="legend">${KM_CATS.map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join('')}</div></div>
-      <div class="card-b"><div class="chart-box"><canvas id="kmChart" aria-label="Grafik jarak per bulan"></canvas></div></div>
+      <div class="card-b"><div class="chart-box"><canvas id="kmChart" aria-label="Grafik jarak per bulan, lari, jalan kaki dan sepeda terpisah"></canvas></div></div>
     </div>
     <div class="card">
-      <div class="card-h"><h2>Kalori per bulan</h2><span class="hint">kcal</span></div>
+      <div class="card-h"><h2>Kalori per bulan</h2><span class="hint">All Sport, kcal</span></div>
       <div class="card-b"><div class="chart-box"><canvas id="kcalChart" aria-label="Grafik kalori per bulan"></canvas></div></div>
     </div>
   </section>
 
-  <section class="grid2 grid-check">
-    <div class="card">
-      <div class="card-h"><h2>Per unit</h2><span class="hint">${esc(pLabel)}</span></div>
-      <div class="card-b scroll" id="unitTable"></div>
-    </div>
-    <details class="card" ${check.length && check.length <= 12 ? 'open' : ''}>
-      <summary class="card-h"><h2>Perlu dicek <span class="chev">›</span></h2><span class="hint">${check.length} entri</span></summary>
-      <div class="card-b scroll" id="checkTable"></div>
-    </details>
+  <section class="card">
+    <div class="card-h"><h2>Per unit</h2><span class="hint">${esc(pLabel)}</span></div>
+    <div class="card-b scroll" id="unitTable"></div>
   </section>`;
 
-  renderKmBoard(people);
-  renderKcalBoard(people);
+  CATS.forEach(c => renderBoard(c, people));
   renderUnits(people);
-  renderCheck(check);
   renderCharts();
 }
 
-function sortRows(rows, s) {
-  return rows.sort((a, b) => {
-    const x = a[s.key], y = b[s.key];
-    if (typeof x === 'string') return s.dir * x.localeCompare(y, 'id');
-    return s.dir * (x - y) || a.name.localeCompare(b.name, 'id');
-  });
-}
-function th(label, key, s, cls, onSort) {
-  const active = s.key === key;
-  return `<th class="sortable ${cls || ''}" data-k="${key}" aria-sort="${active ? (s.dir < 0 ? 'descending' : 'ascending') : 'none'}">${label}${active ? `<span class="arr">${s.dir < 0 ? '▼' : '▲'}</span>` : ''}</th>`;
-}
-function wireSort(el, s, rerender) {
-  el.querySelectorAll('th.sortable').forEach(h => h.onclick = () => {
-    const k = h.dataset.k;
-    if (s.key === k) s.dir *= -1; else { s.key = k; s.dir = k === 'name' || k === 'unit' ? 1 : -1; }
-    rerender();
-  });
-}
 function rankChip(i) { return `<span class="rank ${i < 3 ? 'r' + (i + 1) : ''}">${i + 1}</span>`; }
 const cell = (v, f) => v ? `<td class="r num">${f(v)}</td>` : `<td class="r zero">–</td>`;
 
-function renderKmBoard(people) {
-  const el = $('kmBoard'), s = state.sortKm;
-  const rows = people.filter(p => p.total > 0);
-  if (!rows.length) { el.innerHTML = '<div class="empty">Belum ada entri jarak di periode ini.</div>'; return; }
-  const rankOrder = [...rows].sort((a, b) => b.total - a.total);
-  const rank = new Map(rankOrder.map((p, i) => [p.name, i]));
-  const max = rankOrder[0].total;
-  sortRows(rows, s);
-  el.innerHTML = `<table><thead><tr><th>#</th>${th('Nama', 'name', s)}${th('Lari', 'Lari', s, 'r hide-sm')}${th('Jalan', 'Jalan', s, 'r hide-sm')}${th('Sepeda', 'Sepeda', s, 'r hide-sm')}${th('Total km', 'total', s, 'r')}</tr></thead><tbody>${
-    rows.map(p => `<tr><td>${rankChip(rank.get(p.name))}</td>
-      <td class="who"><b>${esc(p.name)}</b><span>${esc(p.unit)} · ${p.nKm} entri</span></td>
-      ${['Lari', 'Jalan', 'Sepeda'].map(k => cell(p[k], fmtKm.format).replace('<td class="r', '<td class="hide-sm r')).join('')}
-      <td class="barcell"><div class="bar"><div class="track">${KM_CATS.filter(c => p[c.id] > 0).map(c =>
-        `<div class="seg-fill" style="width:${(p[c.id] / max * 100).toFixed(2)}%;background:${c.color}" title="${c.label}: ${fmtKm.format(p[c.id])} km"></div>`).join('')}</div>
-        <span class="val num">${fmtKm.format(p.total)}</span></div></td></tr>`).join('')}</tbody></table>`;
-  wireSort(el, s, () => renderKmBoard(people));
-}
-
-function renderKcalBoard(people) {
-  const el = $('kcalBoard'), s = state.sortKcal;
-  const rows = people.filter(p => p.kcal > 0);
-  if (!rows.length) { el.innerHTML = '<div class="empty">Belum ada entri kalori di periode ini.</div>'; return; }
-  const rankOrder = [...rows].sort((a, b) => b.kcal - a.kcal);
-  const rank = new Map(rankOrder.map((p, i) => [p.name, i]));
-  const max = rankOrder[0].kcal;
-  sortRows(rows, s);
-  el.innerHTML = `<table><thead><tr><th>#</th>${th('Nama', 'name', s)}${th('Kalori', 'kcal', s, 'r')}</tr></thead><tbody>${
-    rows.map(p => `<tr><td>${rankChip(rank.get(p.name))}</td>
-      <td class="who"><b>${esc(p.name)}</b><span>${esc(p.unit)} · ${p.nKcal} entri</span></td>
-      <td class="barcell"><div class="bar"><div class="track"><div class="seg-fill" style="width:${(p.kcal / max * 100).toFixed(2)}%;background:var(--kalori)"></div></div>
-        <span class="val num">${fmtInt.format(p.kcal)}</span></div></td></tr>`).join('')}</tbody></table>`;
-  wireSort(el, s, () => renderKcalBoard(people));
+function renderBoard(c, people) {
+  const el = $('board-' + c.id);
+  const rows = people.filter(p => p[c.key] > 0)
+    .sort((a, b) => b[c.key] - a[c.key] || a.name.localeCompare(b.name, 'id'));
+  if (!rows.length) { el.innerHTML = `<div class="empty">Belum ada entri ${esc(c.label.toLowerCase())} di periode ini.</div>`; return; }
+  const max = rows[0][c.key];
+  el.innerHTML = `<table><thead><tr><th>#</th><th>Nama</th><th class="r">${c.unit === 'km' ? 'Jarak' : 'Kalori'}</th></tr></thead><tbody>${
+    rows.map((p, i) => `<tr><td>${rankChip(i)}</td>
+      <td class="who"><b>${esc(p.name)}</b><span>${esc(p.unit)} · ${p[c.count]} entri</span></td>
+      <td class="barcell"><div class="bar"><div class="track"><div class="seg-fill" style="width:${(p[c.key] / max * 100).toFixed(2)}%;background:${c.color}"></div></div>
+        <span class="val num">${c.fmt(p[c.key])}</span></div></td></tr>`).join('')}</tbody></table>`;
 }
 
 function renderUnits(people) {
   const el = $('unitTable');
   const m = new Map();
   people.forEach(p => {
-    const u = m.get(p.unit) || { unit: p.unit, n: 0, km: 0, kcal: 0 };
-    u.n++; u.km += p.total; u.kcal += p.kcal; m.set(p.unit, u);
+    const u = m.get(p.unit) || { unit: p.unit, n: 0, Lari: 0, Jalan: 0, Sepeda: 0, kcal: 0 };
+    u.n++; CATS.forEach(c => u[c.key] += p[c.key]); m.set(p.unit, u);
   });
-  const rows = [...m.values()].sort((a, b) => b.km - a.km || b.kcal - a.kcal);
+  const rows = [...m.values()].sort((a, b) => a.unit.localeCompare(b.unit, 'id'));
   if (!rows.length) { el.innerHTML = '<div class="empty">Tidak ada data.</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Unit</th><th class="r">Peserta</th><th class="r">Total km</th><th class="r">Kalori</th></tr></thead><tbody>${
-    rows.map(u => `<tr><td style="white-space:nowrap">${esc(u.unit)}</td><td class="r num">${u.n}</td>${cell(u.km, fmtKm.format)}${cell(u.kcal, fmtInt.format)}</tr>`).join('')}</tbody></table>`;
-}
-
-function renderCheck(list) {
-  const el = $('checkTable');
-  if (!list.length) { el.innerHTML = '<div class="empty">Tidak ada entri yang perlu dicek di periode ini.</div>'; return; }
-  const tag = e => !e.counted ? '<span class="tag o">Tidak dihitung</span>'
-    : e.status === 'p' ? '<span class="tag p">Tanggal perkiraan</span>'
-    : e.status === 'x' ? '<span class="tag x">Belum dicek</span>' : '<span class="tag o">Catatan</span>';
-  el.innerHTML = `<table><thead><tr><th>Baris</th><th>Nama</th><th>Tanggal</th><th class="r">Nilai</th><th>Status</th><th>Catatan</th></tr></thead><tbody>${
-    list.sort((a, b) => a.row - b.row).map(e => `<tr><td class="num">${e.row}</td><td>${esc(e.name)}</td>
-      <td class="num" style="white-space:nowrap">${fmtDate(e.date)}</td>
-      <td class="r num" style="white-space:nowrap">${e.cat === 'Kalori' ? fmtInt.format(e.value) + ' kcal' : fmtKm.format(e.value) + ' km'}</td>
-      <td>${tag(e)}</td><td class="note">${esc(e.note || (e.status === 'x' ? 'Tanggal bukti belum diisi; sementara memakai tanggal submit ' + fmtDate(e.submit) : ''))}</td></tr>`).join('')}</tbody></table>`;
+  el.innerHTML = `<table><thead><tr><th>Unit</th><th class="r">Peserta</th>${CATS.map(c => `<th class="r">${c.label} (${c.unit})</th>`).join('')}</tr></thead><tbody>${
+    rows.map(u => `<tr><td style="white-space:nowrap">${esc(u.unit)}</td><td class="r num">${u.n}</td>${CATS.map(c => cell(u[c.key], c.fmt)).join('')}</tr>`).join('')}</tbody></table>`;
 }
 
 function renderCharts() {
@@ -550,27 +474,27 @@ function renderCharts() {
   const sel = state.period === 'all' ? months : PERIODS.find(p => p.id === state.period).months;
   const dim = (color, m) => sel.includes(m) ? color : color + '55';
   const surface = cssVar('--surface'), grid = cssVar('--line'), ink = cssVar('--text-2'), font = 'Plus Jakarta Sans, system-ui, sans-serif';
-  const sum = (cat, m) => list.filter(e => e.month === m && (cat === 'km' ? e.cat !== 'Kalori' : e.cat === cat)).reduce((s, e) => s + e.value, 0);
+  const sum = (cat, m) => list.filter(e => e.month === m && e.cat === cat).reduce((s, e) => s + e.value, 0);
   const common = {
     responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
     interaction: { mode: 'index', intersect: false },
     scales: {
-      x: { stacked: true, grid: { display: false }, ticks: { color: ink, font: { family: font } }, border: { color: grid } },
-      y: { stacked: true, beginAtZero: true, grid: { color: grid }, border: { display: false },
+      x: { grid: { display: false }, ticks: { color: ink, font: { family: font } }, border: { color: grid } },
+      y: { beginAtZero: true, grid: { color: grid }, border: { display: false },
            ticks: { color: ink, font: { family: font }, callback: v => fmtInt.format(v) } },
     },
     plugins: { legend: { display: false }, tooltip: { padding: 10, titleFont: { family: font, weight: '700' }, bodyFont: { family: font } } },
   };
   const km = KM_CATS.map(c => ({ c, color: cssVar('--' + c.id.toLowerCase()) }));
+  // Batang lari, jalan kaki dan sepeda berdampingan (tidak ditumpuk), karena tiap kategori dihitung terpisah.
   charts.km = new Chart($('kmChart'), {
     type: 'bar',
     data: { labels, datasets: km.map(({ c, color }) => ({
       label: c.label, data: months.map(m => +sum(c.id, m).toFixed(2)),
-      backgroundColor: months.map(m => dim(color, m)), borderColor: surface, borderWidth: { top: 2 }, borderSkipped: 'bottom',
-      borderRadius: 3, maxBarThickness: 46 })) },
+      backgroundColor: months.map(m => dim(color, m)), borderRadius: 3, maxBarThickness: 22,
+      categoryPercentage: .72, barPercentage: .9 })) },
     options: { ...common, plugins: { ...common.plugins, tooltip: { ...common.plugins.tooltip,
-      callbacks: { label: x => ` ${x.dataset.label}: ${fmtKm.format(x.raw)} km`,
-                   footer: items => 'Total: ' + fmtKm.format(items.reduce((s, i) => s + i.raw, 0)) + ' km' } } } },
+      callbacks: { label: x => ` ${x.dataset.label}: ${fmtKm.format(x.raw)} km` } } } },
   });
   const kc = cssVar('--kalori');
   charts.kcal = new Chart($('kcalChart'), {
