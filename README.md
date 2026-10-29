@@ -43,7 +43,7 @@ The page is public, like the Apps Script URL. Anyone with the link can see names
 
 ## 3. Keeping dates up to date
 
-New submissions appear on the dashboard right away, using the **submit date** until someone checks the proof. They are listed under **Perlu dicek**.
+New submissions appear on the dashboard right away, using the **submit date** until someone fills in the date from the proof.
 
 In the spreadsheet, menu **Dashboard GESIT → Tambah entri baru ke Tanggal Bukti** (or the automatic trigger) adds a row for each new submission. Then for each row:
 
@@ -72,7 +72,7 @@ After editing `Code.gs`: **Deploy → Manage deployments → ✏️ → Version:
 
 ## Rules the dashboard applies
 
-- **Kilometres and calories are separate.** Lari, Jalan Kaki and Bersepeda are summed as km; All Sport is summed as kcal.
+- **Every category is separate.** Lari, Jalan Kaki and Bersepeda (km) and All Sport (kcal) each have their own total and ranking; they are never added together.
 - **Wrong-column entries follow the numbers.** If the category is a km one but the number was entered in the calorie field (rows 46 and 55), it counts as calories.
 - **Name spellings are merged.** Spellings that differ only in capitalisation are combined automatically. Other variants are mapped in `NAME_FIX` at the top of `Code.gs` (currently Sheila → Sheilla Riesma Intani).
 - **Duplicates are flagged, not removed.** Rows 138 and 113 look like duplicates of rows 100 and 110. They are still counted until you set *Dihitung?* to **Tidak**.
