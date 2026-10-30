@@ -93,6 +93,10 @@ h1 { margin: 2px 0 2px; font-size: clamp(22px, 3.2vw, 32px); line-height: 1.15; 
   border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff; }
 .btn:hover { background: rgba(255,255,255,.12); }
 .btn:disabled { opacity: .6; cursor: progress; }
+.btn-upload { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: var(--sun);
+  color: #10232b; border-color: var(--sun); font-weight: 700; }
+.btn-upload:hover { background: #ffd83d; }
+.btn-upload svg { width: 15px; height: 15px; flex: none; }
 
 main { max-width: 1240px; margin: 0 auto; padding: 18px 16px 40px; }
 
@@ -201,6 +205,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 28px; color: var(--m
     </div>
     <div class="meta">
       <span class="pill" id="srcPill"><span class="dot"></span><span id="srcText">Memuat data...</span></span>
+      <a class="btn btn-upload" href="https://bit.ly/uploadgesitxwellness" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></svg>Upload bukti olahraga</a>
       <button class="btn" id="reloadBtn" type="button">Muat ulang</button>
     </div>
   </div>
