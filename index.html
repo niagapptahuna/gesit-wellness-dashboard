@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GESIT x WELLNESS 2026</title>
 <meta name="description" content="Dashboard GESIT x WELLNESS PLN Mobile 2026 - total jarak dan kalori per orang per periode dua bulanan.">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -75,6 +77,10 @@ body {
   background: linear-gradient(90deg, var(--sun) 0 22%, #00a2e9 22% 100%); }
 .top-inner { max-width: 1240px; margin: 0 auto; padding: 22px 16px 26px; display: flex; gap: 16px;
   align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.logo { flex: none; width: 64px; height: 64px; border-radius: 16px; background: #fff; padding: 6px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.logo img { display: block; width: 100%; height: 100%; }
 .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; font-weight: 600; }
 h1 { margin: 2px 0 2px; font-size: clamp(22px, 3.2vw, 32px); line-height: 1.15; font-weight: 800; letter-spacing: -.01em; }
 .sub { opacity: .85; font-size: 14px; }
@@ -169,6 +175,8 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 28px; color: var(--m
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
+  .brand { align-items: flex-start; gap: 12px; }
+  .logo { width: 48px; height: 48px; border-radius: 12px; padding: 4px; margin-top: 2px; }
   .filters, .filters input, .filters select { width: 100%; }
   .controls { position: static; }
   .seg { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
@@ -183,10 +191,13 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 28px; color: var(--m
 <body>
 <header class="top">
   <div class="top-inner">
-    <div>
-      <div class="eyebrow">PLN UP3 Tahuna</div>
-      <h1>GESIT x WELLNESS PLN Mobile 2026</h1>
-      <div class="sub">Total per orang untuk tiap kategori (lari, jalan kaki, sepeda, All Sport), per dua bulan menurut tanggal aktivitas di bukti olahraga.</div>
+    <div class="brand">
+      <div class="logo"><img src="logo.png" alt="Logo GESIT x WELLNESS" width="52" height="52"></div>
+      <div>
+        <div class="eyebrow">PLN UP3 Tahuna</div>
+        <h1>GESIT x WELLNESS PLN Mobile 2026</h1>
+        <div class="sub">Total per orang untuk tiap kategori (lari, jalan kaki, sepeda, All Sport), per dua bulan menurut tanggal aktivitas di bukti olahraga.</div>
+      </div>
     </div>
     <div class="meta">
       <span class="pill" id="srcPill"><span class="dot"></span><span id="srcText">Memuat data...</span></span>
