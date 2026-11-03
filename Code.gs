@@ -4,9 +4,10 @@
  * Membaca sheet jawaban Google Form + sheet "Tanggal Bukti", lalu mengirim JSON
  * yang dipakai halaman dashboard di GitHub Pages.
  *
- * Periode dihitung dari TANGGAL AKTIVITAS DI BUKTI OLAHRAGA (sheet "Tanggal Bukti"),
- * bukan waktu submit. Entri yang belum diisi tanggal buktinya memakai tanggal submit
- * dan ditandai "Belum dicek" di dashboard.
+ * Periode dihitung dari TANGGAL AKTIVITAS, bukan waktu submit. Urutan sumber tanggal:
+ *   1. kolom D di sheet "Tanggal Bukti" (kalau diisi; dipakai untuk koreksi manual),
+ *   2. jawaban "Tanggal Aktivitas Olahraga" di form,
+ *   3. tanggal submit (ditandai "Belum dicek").
  *
  * Cara pakai singkat (detail di README.md):
  *   1. Tempel file ini di Apps Script, jalankan siapkanSheetTanggalBukti() sekali.
@@ -29,6 +30,10 @@ const SECTIONS = [
   { cat: 'Sepeda', match: /sepeda/i,            value: 13, proof: 14 },
 ];
 
+// Pertanyaan "Tanggal Aktivitas Olahraga" di form (satu kolom per bagian kategori).
+// Kolomnya dicari dari judul, jadi tidak masalah kalau letaknya bergeser.
+const ACTIVITY_DATE_HEADER = /tanggal aktivitas/i;
+
 // Ejaan nama yang berbeda untuk orang yang sama: huruf kecil -> nama yang ditampilkan.
 // Beda huruf besar/kecil saja sudah otomatis digabung, tidak perlu ditulis di sini.
 const NAME_FIX = {
@@ -37,7 +42,7 @@ const NAME_FIX = {
 
 const PROOF_HEADERS = ['ID file bukti', 'Waktu submit', 'Nama', 'Tanggal bukti (yyyy-mm-dd)',
                        'Status', 'Catatan', 'Dihitung?'];
-const STATUS_LABEL = { b: 'Dari bukti', p: 'Perkiraan', x: 'Belum dicek' };
+const STATUS_LABEL = { b: 'Dari bukti', p: 'Perkiraan', f: 'Dari form', x: 'Belum dicek' };
 
 /* ------------------------------------------------------------------ web app */
 
@@ -78,6 +83,7 @@ function buildData_() {
   const tz = ss.getSpreadsheetTimeZone();
   const rows = responseSheet_(ss).getDataRange().getValues();
   const proofs = readProofSheet_(ss, tz);
+  const dateCols = activityDateCols_(rows[0]);
 
   const entries = [];
   const variants = {};   // nameKey -> {ejaan: jumlah}
@@ -93,6 +99,8 @@ function buildData_() {
     const fileId = extractFileId_(r[sec.proof]);
     const p = fileId ? proofs[fileId] : null;
     let date = submit, status = 'x', note = '', counted = 1;
+    const fd = formDate_(r, dateCols, sec, tz);
+    if (fd) { date = fd; status = 'f'; }
     if (p) {
       if (p.date) { date = p.date; status = p.status; }
       note = p.note;
@@ -138,6 +146,22 @@ function pickSection_(r) {
   return SECTIONS.filter(filled)[0] || null;
 }
 
+function activityDateCols_(header) {
+  const cols = [];
+  (Array.isArray(header) ? header : []).forEach(function (h, i) { if (ACTIVITY_DATE_HEADER.test(String(h))) cols.push(i); });
+  return cols;
+}
+
+// Tanggal aktivitas yang diisi di form ('' kalau kosong). Biasanya hanya satu kolom yang terisi,
+// yaitu milik bagian kategori yang dipilih; kalau lebih dari satu, pakai kolom bagian itu.
+function formDate_(r, cols, sec, tz) {
+  const filled = cols.filter(function (c) { return String(r[c]).trim() !== ''; });
+  if (!filled.length) return '';
+  const own = cols[SECTIONS.indexOf(sec)];
+  const c = filled.length > 1 && filled.indexOf(own) >= 0 ? own : filled[0];
+  return parseDate_(r[c], tz);
+}
+
 function readProofSheet_(ss, tz) {
   const sh = ss.getSheetByName(PROOF_SHEET);
   const map = {};
@@ -150,7 +174,7 @@ function readProofSheet_(ss, tz) {
     const st = String(v[4]).toLowerCase();
     map[id] = {
       date: date,
-      status: !date ? 'x' : (st.indexOf('perkiraan') === 0 ? 'p' : 'b'),
+      status: !date ? 'x' : st.indexOf('perkiraan') === 0 ? 'p' : st.indexOf('dari form') === 0 ? 'f' : 'b',
       note: String(v[5] || ''),
       counted: String(v[6]).trim().toLowerCase() === 'tidak' ? 0 : 1,
     };
@@ -255,7 +279,7 @@ function siapkanSheetTanggalBukti() {
     sh.setColumnWidth(1, 120); sh.setColumnWidth(2, 140); sh.setColumnWidth(3, 230);
     sh.setColumnWidth(4, 170); sh.setColumnWidth(5, 110); sh.setColumnWidth(6, 420); sh.setColumnWidth(7, 90);
     sh.getRange('E2:E').setDataValidation(SpreadsheetApp.newDataValidation()
-      .requireValueInList(['Dari bukti', 'Perkiraan', 'Belum dicek'], true).build());
+      .requireValueInList(['Dari bukti', 'Perkiraan', 'Dari form', 'Belum dicek'], true).build());
     sh.getRange('G2:G').setDataValidation(SpreadsheetApp.newDataValidation()
       .requireValueInList(['Ya', 'Tidak'], true).build());
   }
@@ -283,18 +307,21 @@ function siapkanSheetTanggalBukti() {
 }
 
 /**
- * Menambahkan entri form yang belum ada di "Tanggal Bukti" (tanggal kosong, status Belum dicek).
- * Isi kolom D dengan tanggal aktivitas di bukti, format yyyy-mm-dd.
+ * Menambahkan entri form yang belum ada di "Tanggal Bukti". Kolom D dibiarkan kosong:
+ * entri yang mengisi "Tanggal Aktivitas Olahraga" di form otomatis memakai tanggal itu
+ * (status "Dari form"). Isi kolom D hanya untuk mengoreksi tanggal, format yyyy-mm-dd.
  */
 function tambahEntriBaru() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const tz = ss.getSpreadsheetTimeZone();
   const sh = ss.getSheetByName(PROOF_SHEET);
   if (!sh) throw new Error('Jalankan siapkanSheetTanggalBukti() dulu');
+  sh.getRange('E2:E').setDataValidation(SpreadsheetApp.newDataValidation()
+    .requireValueInList(['Dari bukti', 'Perkiraan', 'Dari form', 'Belum dicek'], true).build());
   const existing = existingIds_(sh);
   const info = responseInfo_(ss, tz);
   const add = Object.keys(info).filter(function (id) { return !existing[id]; }).map(function (id) {
-    return [id, info[id].submit, info[id].name, '', 'Belum dicek', '', 'Ya'];
+    return [id, info[id].submit, info[id].name, '', info[id].formDate ? 'Dari form' : 'Belum dicek', '', 'Ya'];
   });
   if (add.length) sh.getRange(sh.getLastRow() + 1, 1, add.length, PROOF_HEADERS.length).setValues(add);
   hapusCache();
@@ -319,6 +346,7 @@ function existingIds_(sh) {
 
 function responseInfo_(ss, tz) {
   const rows = responseSheet_(ss).getDataRange().getValues();
+  const dateCols = activityDateCols_(rows[0]);
   const info = {};
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
@@ -328,6 +356,7 @@ function responseInfo_(ss, tz) {
     if (id) info[id] = {
       submit: Utilities.formatDate(r[0] instanceof Date ? r[0] : new Date(r[0]), tz, 'yyyy-MM-dd HH:mm'),
       name: String(r[1]).trim(),
+      formDate: formDate_(r, dateCols, sec, tz),
     };
   }
   return info;
@@ -363,6 +392,16 @@ function buatSheetRekap() {
            ',c="Lari",' + R + cols[1] + '2:' + cols[1] + ',c="Jalan",' + R + cols[2] + '2:' + cols[2] +
            ',c="Sepeda",' + R + cols[3] + '2:' + cols[3] + '))';
   };
+  // Tanggal Aktivitas Olahraga dari form: kolom pertama yang terisi di antara kolom-kolom tanggal.
+  const rs = responseSheet_(ss);
+  const dcols = activityDateCols_(rs.getRange(1, 1, 1, rs.getLastColumn()).getValues()[0])
+    .map(function (i) { return colA1_(i + 1); });
+  let fd = '""';
+  for (let k = dcols.length - 1; k >= 0; k--) {
+    const rg = R + dcols[k] + '2:' + dcols[k];
+    fd = 'IF(' + rg + '<>"",' + rg + ',' + fd + ')';
+  }
+  const formDate = dcols.length ? 'LET(v,' + fd + ',IF(ISNUMBER(v),INT(v),IFERROR(DATEVALUE(v),"")))' : '""';
   const data = [
     ['Baris', '=ARRAYFORMULA(IF(' + R + 'A2:A="",,ROW(' + R + 'A2:A)))'],
     ['Nama', '=ARRAYFORMULA(IF(' + R + 'A2:A="",,' + nameExpr + '))'],
@@ -378,14 +417,15 @@ function buatSheetRekap() {
     ['Tanggal submit', '=ARRAYFORMULA(IF(D2:D="",,INT(' + R + 'A2:A)))'],
     ['Tanggal bukti', '=ARRAYFORMULA(IF(D2:D="",,IFERROR(LET(v,VLOOKUP(F2:F,' + T + 'A2:D,4,FALSE),' +
       'IF(ISNUMBER(v),INT(v),DATEVALUE(v))),"")))'],
-    ['Tanggal dipakai', '=ARRAYFORMULA(IF(D2:D="",,IF(H2:H="",G2:G,H2:H)))'],
-    ['Status', '=ARRAYFORMULA(IF(D2:D="",,IF(H2:H="","Belum dicek",LET(s,IFERROR(VLOOKUP(F2:F,' + T +
-      'A2:E,5,FALSE),""),IF(s="","Dari bukti",s)))))'],
+    ['Tanggal dipakai', '=ARRAYFORMULA(IF(D2:D="",,IF(H2:H<>"",H2:H,IF(O2:O<>"",O2:O,G2:G))))'],
+    ['Status', '=ARRAYFORMULA(IF(D2:D="",,IF(H2:H<>"",LET(s,IFERROR(VLOOKUP(F2:F,' + T +
+      'A2:E,5,FALSE),""),IF(s="","Dari bukti",s)),IF(O2:O<>"","Dari form","Belum dicek"))))'],
     ['Dihitung', '=ARRAYFORMULA(IF(D2:D="",,IF(IFERROR(VLOOKUP(F2:F,' + T + 'A2:G,7,FALSE),"Ya")="Tidak",0,1)))'],
     ['Bulan', '=ARRAYFORMULA(IF(D2:D="",,MONTH(I2:I)))'],
     ['Periode', '=ARRAYFORMULA(IF(D2:D="",,CHOOSE(ROUNDUP(L2:L/2),"Jan–Feb","Mar–Apr","' +
       REKAP_PERIODS.join('","') + '")))'],
     ['Catatan', '=ARRAYFORMULA(IF(D2:D="",,IFERROR(VLOOKUP(F2:F,' + T + 'A2:F,6,FALSE)&"","")))'],
+    ['Tanggal form', '=ARRAYFORMULA(IF(D2:D="",,' + formDate + '))'],
   ];
   const sd = freshSheet_(ss, REKAP_DATA);
   sd.getRange(1, 1, 1, data.length).setValues([data.map(function (c) { return c[0]; })]);
@@ -393,6 +433,7 @@ function buatSheetRekap() {
   headerStyle_(sd.getRange(1, 1, 1, data.length));
   sd.getRange('E:E').setNumberFormat('#,##0.00');
   sd.getRange('G:I').setNumberFormat('yyyy-mm-dd');
+  sd.getRange('O:O').setNumberFormat('yyyy-mm-dd');
   sd.setFrozenRows(1);
   sd.setColumnWidth(2, 230); sd.setColumnWidth(6, 120); sd.setColumnWidth(14, 380);
 

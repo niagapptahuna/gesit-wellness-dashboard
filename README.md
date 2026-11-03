@@ -1,6 +1,6 @@
 # Dashboard GESIT x WELLNESS PLN Mobile 2026
 
-Per-person distance and calorie totals for the GESIT x WELLNESS program, grouped into two-month periods (Mei–Jun, Jul–Agu, Sep–Okt, Nov–Des) by the **activity date shown on each Bukti Olahraga**, not the form submit time.
+Per-person distance and calorie totals for the GESIT x WELLNESS program, grouped into two-month periods (Mei–Jun, Jul–Agu, Sep–Okt, Nov–Des) by the **activity date** (from the form's *Tanggal Aktivitas Olahraga*, or read from each Bukti Olahraga for older entries), not the form submit time.
 
 ```
 index.html            dashboard page (host on GitHub Pages)
@@ -43,15 +43,21 @@ The page is public, like the Apps Script URL. Anyone with the link can see names
 
 ## 3. Keeping dates up to date
 
-New submissions appear on the dashboard right away, using the **submit date** until someone fills in the date from the proof.
+Since 3 Nov 2026 the form asks **Tanggal Aktivitas Olahraga** in every category section (columns Q–T of the responses sheet). New submissions use that date automatically, so nothing needs to be filled in by hand. The date used for each entry is, in order:
 
-In the spreadsheet, menu **Dashboard GESIT → Tambah entri baru ke Tanggal Bukti** (or the automatic trigger) adds a row for each new submission. Then for each row:
+1. column D of **Tanggal Bukti**, if filled in (use it to correct a wrong date),
+2. the form's **Tanggal Aktivitas Olahraga** (status *Dari form*),
+3. the submit date, for older entries without either (status *Belum dicek*).
+
+The date columns are found by their header text, so moving or adding form questions doesn't break this.
+
+Menu **Dashboard GESIT → Tambah entri baru ke Tanggal Bukti** (or the automatic trigger) adds a row for each new submission, which you only need for corrections:
 
 | Column | What to enter |
 |---|---|
-| D · Tanggal bukti | Activity date from the proof, as `yyyy-mm-dd` (e.g. `2026-11-05`). `dd/mm/yyyy` also works. |
-| E · Status | **Dari bukti** if the date is on the proof, **Perkiraan** if you had to estimate it |
-| F · Catatan | Optional note shown on the dashboard |
+| D · Tanggal bukti | Leave empty to use the form date. To override it, the activity date as `yyyy-mm-dd` (e.g. `2026-11-05`); `dd/mm/yyyy` also works. |
+| E · Status | **Dari bukti** if the date is on the proof, **Perkiraan** if you had to estimate it, **Dari form** when it comes from the form |
+| F · Catatan | Optional note |
 | G · Dihitung? | **Tidak** to leave a duplicate out of the totals |
 
 The dashboard caches data for 5 minutes. The **Muat ulang** button on the page, or **Dashboard GESIT → Segarkan data dashboard sekarang**, refreshes it immediately.
@@ -62,7 +68,7 @@ The responses spreadsheet also has three tabs that recalculate automatically wit
 
 - **Rekap per Periode**: per person, for Mei–Jun, Jul–Agu, Sep–Okt, Nov–Des and all periods (Lari, Jalan, Sepeda, total km, kalori), with totals on row 5.
 - **Rekap per Bulan**: per person per month, total km and kalori.
-- **Data Rekap**: one row per form answer with the category, value, proof date used, status and period. The two tabs above are built from it.
+- **Data Rekap**: one row per form answer with the category, value, proof date, form date (*Tanggal form*), the date used, status and period. The two tabs above are built from it.
 
 They were created by `buatSheetRekap()`. To rebuild them (for example after changing `NAME_FIX`), use **Dashboard GESIT → Buat ulang tab rekap**.
 
